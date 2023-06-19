@@ -40,8 +40,8 @@ use num_traits::One;
 type Graph<V, E> = HashMap<V, HashMap<V, E>>;
 
 pub fn floyd_warshall<
-    V: Eq + Hash + Copy,
-    E: PartialOrd + Copy + Mul<Output = E> + num_traits::One,
+    V: Eq + Hash + Copy + std::fmt::Debug,
+    E: PartialOrd + Copy + Mul<Output = E> + num_traits::One + std::fmt::Debug,
 >(
     graph: &Graph<V, E>,
 ) -> HashMap<V, HashMap<V, E>> {
@@ -68,9 +68,6 @@ pub fn floyd_warshall<
                 continue;
             }
             for &j in &keys {
-                if i == j {
-                    continue;
-                }
                 if !map[&k].contains_key(&j) {
                     continue;
                 }
@@ -120,16 +117,23 @@ fn main() -> Result<(), Box<dyn Error>> {
             continue;
         }
         let pair = pair.unwrap();
-        add_edge(&mut graph, &pair.0, &pair.1, 1.0 / price.price);
         add_edge(&mut graph, &pair.1, &pair.0, price.price);
     }
 
+    let mut count = 0;
     let result = floyd_warshall(&graph);
     for (k, v) in result {
-        if *v.get(k).unwrap() != 1.0f64 {
+        let value = *v.get(k).unwrap();
+        if value < 1.0 && value > 0.0 {
+            count += 1;
             dbg!((k, v.get(k).unwrap()));
         }
     }
+
+    dbg!(count);
+
+    dbg!(graph.keys().len());
+    dbg!(graph.values().into_iter().map(|v| v.len()).sum::<usize>());
 
     Ok(())
 }
