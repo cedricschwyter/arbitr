@@ -1,4 +1,4 @@
-//! This project contains source code that is licensed under the MIT License. A copy of this license
+//! This file contains source code that is licensed under the MIT License. A copy of this license
 //! is provided below:
 //!
 //! MIT License
@@ -23,25 +23,18 @@
 //! OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //! SOFTWARE.
 
-use std::collections::HashMap;
-use std::error::Error;
 use std::hash::Hash;
 use std::ops::Mul;
-
-use binance::api::*;
-use binance::general::General;
-use binance::market::*;
-use binance::model::*;
+use std::{collections::HashMap, fmt::Debug};
 
 use num_traits::One;
 
-// Source and copyright of this Floyd-Warshall implementation:
 // https://github.com/TheAlgorithms/Rust/blob/master/src/graph/floyd_warshall.rs
-type Graph<V, E> = HashMap<V, HashMap<V, E>>;
+pub type Graph<V, E> = HashMap<V, HashMap<V, E>>;
 
-pub fn floyd_warshall<
-    V: Eq + Hash + Copy + std::fmt::Debug,
-    E: PartialOrd + Copy + Mul<Output = E> + num_traits::One + std::fmt::Debug,
+pub fn floyd_warshall_multiplicative<
+    V: Eq + Hash + Copy + Debug,
+    E: PartialOrd + Copy + Mul<Output = E> + One + Debug,
 >(
     graph: &Graph<V, E>,
 ) -> HashMap<V, HashMap<V, E>> {
@@ -90,50 +83,11 @@ pub fn floyd_warshall<
     map
 }
 
-fn add_edge<V: Eq + Hash + Copy, E: PartialOrd + Copy>(
+pub fn add_edge<V: Eq + Hash + Copy, E: PartialOrd + Copy>(
     graph: &mut Graph<V, E>,
     v1: V,
     v2: V,
     c: E,
 ) {
     graph.entry(v1).or_insert_with(HashMap::new).insert(v2, c);
-}
-
-fn main() -> Result<(), Box<dyn Error>> {
-    let general: General = Binance::new(None, None);
-    let exchange_info: ExchangeInformation = general.exchange_info()?;
-    let mut pairs: HashMap<String, (String, String)> = HashMap::new();
-    for symbol in exchange_info.symbols {
-        pairs.insert(symbol.symbol, (symbol.base_asset, symbol.quote_asset));
-    }
-    let market: Market = Binance::new(None, None);
-    let prices: Prices = market.get_all_prices()?;
-    let Prices::AllPrices(prices) = prices;
-
-    let mut graph: Graph<&str, f64> = HashMap::new();
-    for price in prices {
-        let pair = pairs.get(&price.symbol);
-        if pair.is_none() {
-            continue;
-        }
-        let pair = pair.unwrap();
-        add_edge(&mut graph, &pair.1, &pair.0, price.price);
-    }
-
-    let mut count = 0;
-    let result = floyd_warshall(&graph);
-    for (k, v) in result {
-        let value = *v.get(k).unwrap();
-        if value < 1.0 && value > 0.0 {
-            count += 1;
-            dbg!((k, v.get(k).unwrap()));
-        }
-    }
-
-    dbg!(count);
-
-    dbg!(graph.keys().len());
-    dbg!(graph.values().into_iter().map(|v| v.len()).sum::<usize>());
-
-    Ok(())
 }

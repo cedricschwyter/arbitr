@@ -5,6 +5,15 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "arbitr"
+path = "./main.rs"
+
+[lib]
+name = "arbitr"
+path = "./lib.rs"
+
 [dependencies]
 binance = "0.20.2"
+clap = { version = "4.3.4", features = ["derive"] }
 num-traits = "0.2.15"
